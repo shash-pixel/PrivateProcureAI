@@ -1,5 +1,12 @@
 """Validated domain models shared across PrivateProcureAI."""
 
+from privateprocureai.schemas.intent import (
+    ConstraintStrength,
+    ExtractedIntent,
+    IntentConstraint,
+    IntentDetails,
+    IntentSource,
+)
 from privateprocureai.schemas.models import (
     AgentResult,
     AgentStatus,
@@ -18,7 +25,12 @@ __all__ = [
     "AgentResult",
     "AgentStatus",
     "BudgetConstraint",
+    "ConstraintStrength",
     "Evidence",
+    "ExtractedIntent",
+    "IntentConstraint",
+    "IntentDetails",
+    "IntentSource",
     "Money",
     "PlanTask",
     "PlanningRequest",
