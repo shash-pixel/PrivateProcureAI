@@ -8,13 +8,14 @@ version = "0.1.0"
 description = "A multi-agent AI procurement and planning system."
 readme = "README.md"
 requires-python = ">=3.11"
-[tool.hatch.build.targets.wheel]
-packages = ["src/privateprocureai"]
 license = { text = "MIT" }
 authors = [
     { name = "PrivateProcureAI contributors" },
 ]
-dependencies = []
+dependencies = [
+    "pydantic>=2.10,<3.0",
+    "pydantic-settings>=2.7,<3.0",
+]
 
 [project.optional-dependencies]
 dev = [
