@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "privateprocureai"
+version = "0.1.0"
+description = "A multi-agent AI procurement and planning system."
+readme = "README.md"
+requires-python = ">=3.11"
+[tool.hatch.build.targets.wheel]
+packages = ["src/privateprocureai"]
+license = { text = "MIT" }
+authors = [
+    { name = "PrivateProcureAI contributors" },
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
