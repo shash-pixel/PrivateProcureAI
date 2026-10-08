@@ -30,8 +30,8 @@ class AppSettings(BaseSettings):
     environment: Environment = "development"
     log_level: LogLevel = "INFO"
 
-    llm_provider: LLMProvider = "mock"
-    llm_model: str = "mock-planner-v1"
+    llm_provider: LLMProvider = "gemini"
+    llm_model: str = Field(min_length=1,max_length=200)
     llm_api_key: SecretStr | None = None
 
     request_timeout_seconds: int = Field(default=30, ge=1, le=300)
