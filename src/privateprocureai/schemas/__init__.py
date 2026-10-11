@@ -20,6 +20,13 @@ from privateprocureai.schemas.models import (
     TaskPriority,
     UserPreferences,
 )
+from privateprocureai.schemas.orchestration import (
+    WorkflowEvent,
+    WorkflowResult,
+    WorkflowStatus,
+    WorkflowStep,
+)
+from privateprocureai.schemas.planning import TaskDraft, TaskPlan, TaskPlanDraft
 
 __all__ = [
     "AgentResult",
@@ -38,4 +45,11 @@ __all__ = [
     "TaskKind",
     "TaskPriority",
     "UserPreferences",
+    "TaskDraft",
+    "TaskPlan",
+    "TaskPlanDraft",
+    "WorkflowEvent",
+    "WorkflowResult",
+    "WorkflowStatus",
+    "WorkflowStep",
 ]
