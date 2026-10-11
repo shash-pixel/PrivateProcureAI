@@ -20,8 +20,8 @@ class PlanningWorkflowState(TypedDict, total=False):
     extracted_intent: ExtractedIntent
     task_plan: TaskPlan
 
-    # LangGraph uses this reducer to append events from successive nodes.
+# LangGraph uses this reducer to append events from successive nodes.
     execution_log: Annotated[list[WorkflowEvent], add]
 
 
-    ##TypedDict describes state without turning it into a separate runtime data model. Each graph node receives state and returns only the fields it changes.
+##TypedDict describes state without turning it into a separate runtime data model.

@@ -12,6 +12,7 @@ from privateprocureai.schemas.models import (
     AgentStatus,
     BudgetConstraint,
     Evidence,
+    Finding,
     Money,
     PlanningRequest,
     PlanTask,
@@ -27,6 +28,7 @@ from privateprocureai.schemas.orchestration import (
     WorkflowStep,
 )
 from privateprocureai.schemas.planning import TaskDraft, TaskPlan, TaskPlanDraft
+from privateprocureai.schemas.research import ResearchAgentOutput
 
 __all__ = [
     "AgentResult",
@@ -52,4 +54,6 @@ __all__ = [
     "WorkflowResult",
     "WorkflowStatus",
     "WorkflowStep",
+    "Finding",
+    "ResearchAgentOutput",
 ]

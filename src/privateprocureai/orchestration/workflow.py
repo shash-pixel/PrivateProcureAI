@@ -1,6 +1,6 @@
 """LangGraph orchestration for intent extraction and task planning."""
 
-##It connects my Intent Extraction module (Module 4) and Task Planning module (Module 5) using LangGraph.
+#It connects Intent Extraction module (Module 4) and Task Planning module (Module 5) using LangGraph
 
 from __future__ import annotations
 
@@ -95,7 +95,8 @@ class PlanningWorkflow:
         }
 
     @staticmethod
-    def _route_after_intent(   ##This method decides what happens immediately after intent extraction.
+    def _route_after_intent(   
+        ##This method decides what happens immediately after intent extraction.
         state: PlanningWorkflowState,
     ) -> Literal["create_plan", "end"]:
         """Stop safely when clarification is needed; otherwise continue."""

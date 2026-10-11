@@ -123,6 +123,14 @@ class Recommendation(DomainModel):
     evidence_ids: list[UUID] = Field(default_factory=list)
     confidence_score: float = Field(ge=0.0, le=1.0)
 
+class Finding(DomainModel):
+    """A source-linked statement produced by an agent."""
+
+    finding_id: UUID = Field(default_factory=uuid4)
+    statement: str = Field(min_length=3, max_length=2_000)
+    evidence_ids: list[UUID] = Field(min_length=1)
+    confidence_score: float = Field(ge=0.0, le=1.0)
+
 
 class AgentResult(DomainModel):
     """The structured output contract used by each future specialized agent."""
@@ -133,6 +141,7 @@ class AgentResult(DomainModel):
     recommendations: list[Recommendation] = Field(default_factory=list)
     evidence: list[Evidence] = Field(default_factory=list)
     error_message: str | None = Field(default=None, max_length=1_000)
+    findings: list[Finding] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_failure_details(self) -> Self:
