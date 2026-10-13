@@ -142,6 +142,8 @@ class AgentResult(DomainModel):
     evidence: list[Evidence] = Field(default_factory=list)
     error_message: str | None = Field(default=None, max_length=1_000)
     findings: list[Finding] = Field(default_factory=list)
+    task_id: UUID | None=None 
+    # the above line connects each agent result to the task that produced it .
 
     @model_validator(mode="after")
     def validate_failure_details(self) -> Self:

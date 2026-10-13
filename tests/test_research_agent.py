@@ -11,6 +11,7 @@ from privateprocureai.agents.research import (
 )
 from privateprocureai.llm import MockLLMProvider
 from privateprocureai.schemas import (
+    AgentTaskContext,
     Evidence,
     ExtractedIntent,
     PlanTask,
@@ -43,6 +44,7 @@ def test_research_agent_returns_findings_linked_to_supplied_evidence() -> None:
     )
 
     result = ResearchAgent(provider).run(
+    AgentTaskContext(
         intent=ExtractedIntent(
             request_id=uuid4(),
             objective="Determine whether stated requirements are supported.",
@@ -60,6 +62,7 @@ def test_research_agent_returns_findings_linked_to_supplied_evidence() -> None:
         ),
         evidence=[evidence],
     )
+)
 
     assert result.agent_name == "research_agent"
     assert result.findings[0].evidence_ids == [evidence.evidence_id]
@@ -71,6 +74,7 @@ def test_research_agent_rejects_non_research_task() -> None:
 
     with pytest.raises(InvalidResearchTaskError):
         agent.run(
+        AgentTaskContext(
             intent=ExtractedIntent(
                 request_id=uuid4(),
                 objective="Evaluate options.",
@@ -88,6 +92,7 @@ def test_research_agent_rejects_non_research_task() -> None:
             ),
             evidence=[],
         )
+    )
 
 
 def test_research_agent_rejects_unsupported_evidence_reference() -> None:
@@ -118,6 +123,7 @@ def test_research_agent_rejects_unsupported_evidence_reference() -> None:
 
     with pytest.raises(UnsupportedEvidenceReferenceError):
         agent.run(
+        AgentTaskContext(
             intent=ExtractedIntent(
                 request_id=uuid4(),
                 objective="Analyze evidence.",
@@ -135,3 +141,4 @@ def test_research_agent_rejects_unsupported_evidence_reference() -> None:
             ),
             evidence=[supplied_evidence],
         )
+    )

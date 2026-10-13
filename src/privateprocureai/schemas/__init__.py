@@ -1,5 +1,6 @@
 """Validated domain models shared across PrivateProcureAI."""
 
+from privateprocureai.schemas.agents import AgentTaskContext, PlanExecutionResult
 from privateprocureai.schemas.intent import (
     ConstraintStrength,
     ExtractedIntent,
@@ -28,6 +29,7 @@ from privateprocureai.schemas.orchestration import (
     WorkflowStep,
 )
 from privateprocureai.schemas.planning import TaskDraft, TaskPlan, TaskPlanDraft
+from privateprocureai.schemas.recommendation import RecommendationAgentOutput
 from privateprocureai.schemas.research import ResearchAgentOutput
 
 __all__ = [
@@ -56,4 +58,7 @@ __all__ = [
     "WorkflowStep",
     "Finding",
     "ResearchAgentOutput",
+    "AgentTaskContext",
+    "PlanExecutionResult",
+    "RecommendationAgentOutput",
 ]
