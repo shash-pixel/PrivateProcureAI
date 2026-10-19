@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr
@@ -35,6 +36,19 @@ class AppSettings(BaseSettings):
     llm_api_key: SecretStr | None = None
 
     request_timeout_seconds: int = Field(default=30, ge=1, le=300)
+
+    embedding_model: str = Field(
+    default="gemini-embedding-2",
+    min_length=1,
+    max_length=200,
+)
+
+    chroma_persist_directory: Path = Path("data/chroma")
+    chroma_collection_name: str = Field(
+    default="privateprocureai_chunks",
+    min_length=3,
+    max_length=100,
+)
 
     @property
     def uses_remote_llm(self) -> bool:

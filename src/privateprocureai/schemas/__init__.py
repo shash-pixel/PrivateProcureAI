@@ -29,8 +29,16 @@ from privateprocureai.schemas.orchestration import (
     WorkflowStep,
 )
 from privateprocureai.schemas.planning import TaskDraft, TaskPlan, TaskPlanDraft
+from privateprocureai.schemas.rag import (
+    ChunkingConfig,
+    DocumentChunk,
+    DocumentMetadata,
+    DocumentType,
+    IngestionResult,
+)
 from privateprocureai.schemas.recommendation import RecommendationAgentOutput
 from privateprocureai.schemas.research import ResearchAgentOutput
+from privateprocureai.schemas.vector import VectorSearchMatch
 
 __all__ = [
     "AgentResult",
@@ -61,4 +69,10 @@ __all__ = [
     "AgentTaskContext",
     "PlanExecutionResult",
     "RecommendationAgentOutput",
+    "ChunkingConfig",
+    "DocumentChunk",
+    "DocumentMetadata",
+    "DocumentType",
+    "IngestionResult",
+    "VectorSearchMatch",
 ]
