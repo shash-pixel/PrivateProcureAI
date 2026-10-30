@@ -1,6 +1,13 @@
 """Validated domain models shared across PrivateProcureAI."""
 
 from privateprocureai.schemas.agents import AgentTaskContext, PlanExecutionResult
+from privateprocureai.schemas.budget import (
+    BudgetAssessment,
+    BudgetEvaluationInput,
+    BudgetStatus,
+    BudgetViolation,
+    CostLineItem,
+)
 from privateprocureai.schemas.intent import (
     ConstraintStrength,
     ExtractedIntent,
@@ -44,6 +51,17 @@ from privateprocureai.schemas.retrieval import (
 )
 from privateprocureai.schemas.vector import VectorSearchMatch
 
+from privateprocureai.schemas.evaluation import (
+    EvaluationAnalysis,
+    EvaluationCriterion,
+    EvaluationInput,
+    EvaluationIssue,
+    EvaluationIssueCode,
+    EvaluationReport,
+    EvaluationSeverity,
+    EvaluationStatus,
+)
+
 __all__ = [
     "AgentResult",
     "AgentStatus",
@@ -81,4 +99,17 @@ __all__ = [
     "VectorSearchMatch",
     "RetrievalConfig",
     "RetrievalResult",
+    "BudgetAssessment",
+    "BudgetEvaluationInput",
+    "BudgetStatus",
+    "BudgetViolation",
+    "CostLineItem",
+    "EvaluationAnalysis",
+    "EvaluationCriterion",
+    "EvaluationInput",
+    "EvaluationIssue",
+    "EvaluationIssueCode",
+    "EvaluationReport",
+    "EvaluationSeverity",
+    "EvaluationStatus",
 ]
