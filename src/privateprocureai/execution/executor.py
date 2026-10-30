@@ -6,6 +6,10 @@ from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from privateprocureai.agents.base import TaskAgent
+from privateprocureai.rag.retrieval import (
+    EvidenceRetriever,
+    build_retrieval_query,
+)
 from privateprocureai.schemas import (
     AgentResult,
     AgentStatus,
@@ -24,7 +28,13 @@ class AgentExecutionError(RuntimeError):
 class ParallelAgentExecutor:
     """Run independent plan tasks concurrently while respecting dependencies."""
 
-    def __init__(self, agents: Sequence[TaskAgent], max_workers: int = 4) -> None:
+    def __init__(
+    self,
+    agents: Sequence[TaskAgent],
+    *,
+    retriever: EvidenceRetriever | None = None,
+    max_workers: int = 4,
+) -> None:
         if not agents:
             raise ValueError("At least one task agent is required.")
 
@@ -32,6 +42,7 @@ class ParallelAgentExecutor:
             raise ValueError("max_workers must be at least 1.")
 
         self._agents = list(agents)
+        self._retriever = retriever
         self._max_workers = max_workers
 
     def execute(
@@ -114,12 +125,45 @@ class ParallelAgentExecutor:
             raise AgentExecutionError(
                 f"No registered agent supports task kind '{task.kind}'."
             )
+        task_evidence = self._collect_evidence(
+            intent=intent,
+            task=task,
+            supplied_evidence=evidence,
+        )
+
 
         context = AgentTaskContext(
             intent=intent,
             task=task,
-            evidence=evidence,
+            evidence=task_evidence,
             dependency_results=dependency_results,
         )
 
         return agent.run(context)
+
+    def _collect_evidence(
+        self,
+        *,
+        intent: ExtractedIntent,
+        task,
+        supplied_evidence: list[Evidence],
+) ->    list[Evidence]:
+        """Combine caller-supplied and retrieved evidence without duplicates."""
+        combined_evidence = list(supplied_evidence)
+
+        if task.requires_retrieval:
+            if self._retriever is None:
+                raise AgentExecutionError(
+                    "This task requires retrieval, but no evidence retriever is configured."
+                )
+
+            query = build_retrieval_query(intent, task)
+            retrieval_result = self._retriever.retrieve(query)
+            combined_evidence.extend(retrieval_result.evidence)
+
+        unique_evidence: dict[str, Evidence] = {}
+
+        for item in combined_evidence:
+            unique_evidence.setdefault(item.source_id, item)
+
+        return list(unique_evidence.values())    

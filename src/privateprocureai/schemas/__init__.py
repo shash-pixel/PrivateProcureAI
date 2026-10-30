@@ -38,6 +38,10 @@ from privateprocureai.schemas.rag import (
 )
 from privateprocureai.schemas.recommendation import RecommendationAgentOutput
 from privateprocureai.schemas.research import ResearchAgentOutput
+from privateprocureai.schemas.retrieval import (
+    RetrievalConfig,
+    RetrievalResult,
+)
 from privateprocureai.schemas.vector import VectorSearchMatch
 
 __all__ = [
@@ -75,4 +79,6 @@ __all__ = [
     "DocumentType",
     "IngestionResult",
     "VectorSearchMatch",
+    "RetrievalConfig",
+    "RetrievalResult",
 ]
