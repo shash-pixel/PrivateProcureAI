@@ -8,6 +8,16 @@ from privateprocureai.schemas.budget import (
     BudgetViolation,
     CostLineItem,
 )
+from privateprocureai.schemas.evaluation import (
+    EvaluationAnalysis,
+    EvaluationCriterion,
+    EvaluationInput,
+    EvaluationIssue,
+    EvaluationIssueCode,
+    EvaluationReport,
+    EvaluationSeverity,
+    EvaluationStatus,
+)
 from privateprocureai.schemas.intent import (
     ConstraintStrength,
     ExtractedIntent,
@@ -50,17 +60,6 @@ from privateprocureai.schemas.retrieval import (
     RetrievalResult,
 )
 from privateprocureai.schemas.vector import VectorSearchMatch
-
-from privateprocureai.schemas.evaluation import (
-    EvaluationAnalysis,
-    EvaluationCriterion,
-    EvaluationInput,
-    EvaluationIssue,
-    EvaluationIssueCode,
-    EvaluationReport,
-    EvaluationSeverity,
-    EvaluationStatus,
-)
 
 __all__ = [
     "AgentResult",

@@ -39,6 +39,11 @@ class CriticAgent:
 
     def evaluate(self, evaluation_input: EvaluationInput) -> EvaluationReport:
         """Combine Gemini quality analysis with non-negotiable Python rules."""
+        budget_assessment_json = (
+                evaluation_input.budget_assessment.model_dump_json(indent=2)
+                if evaluation_input.budget_assessment is not None
+                else "None"
+            ),
         request = StructuredGenerationRequest(
             system_instruction=CRITIC_SYSTEM_INSTRUCTION,
             user_prompt=(
@@ -47,7 +52,8 @@ class CriticAgent:
                 "Agent results:\n"
                 f"{[result.model_dump(mode='json') for result in evaluation_input.agent_results]}"
                 "\n\nBudget assessment:\n"
-                f"{evaluation_input.budget_assessment.model_dump_json(indent=2) if evaluation_input.budget_assessment else 'None'}"
+                f"{budget_assessment_json}"
+
             ),
             temperature=0.0,
         )
