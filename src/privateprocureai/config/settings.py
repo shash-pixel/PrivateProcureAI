@@ -37,6 +37,8 @@ class AppSettings(BaseSettings):
 
     request_timeout_seconds: int = Field(default=30, ge=1, le=300)
 
+    preference_memory_path: Path = Path("data/preference_memory.json")
+
     embedding_model: str = Field(
     default="gemini-embedding-2",
     min_length=1,

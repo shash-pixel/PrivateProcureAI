@@ -25,6 +25,12 @@ from privateprocureai.schemas.intent import (
     IntentDetails,
     IntentSource,
 )
+from privateprocureai.schemas.memory import (
+    PreferenceKind,
+    PreferenceMemoryItem,
+    PreferenceSource,
+    UserPreferenceMemory,
+)
 from privateprocureai.schemas.models import (
     AgentResult,
     AgentStatus,
@@ -121,4 +127,8 @@ __all__ = [
     "ReplanningIteration",
     "ReplanningOutcome",
     "ReplanningStatus",
+    "PreferenceKind",
+    "PreferenceMemoryItem",
+    "PreferenceSource",
+    "UserPreferenceMemory",
 ]
