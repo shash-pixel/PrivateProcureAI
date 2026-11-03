@@ -54,6 +54,12 @@ from privateprocureai.schemas.rag import (
     IngestionResult,
 )
 from privateprocureai.schemas.recommendation import RecommendationAgentOutput
+from privateprocureai.schemas.replanning import (
+    ReplanningConfig,
+    ReplanningIteration,
+    ReplanningOutcome,
+    ReplanningStatus,
+)
 from privateprocureai.schemas.research import ResearchAgentOutput
 from privateprocureai.schemas.retrieval import (
     RetrievalConfig,
@@ -111,4 +117,8 @@ __all__ = [
     "EvaluationReport",
     "EvaluationSeverity",
     "EvaluationStatus",
+    "ReplanningConfig",
+    "ReplanningIteration",
+    "ReplanningOutcome",
+    "ReplanningStatus",
 ]
