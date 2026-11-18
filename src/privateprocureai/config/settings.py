@@ -62,3 +62,6 @@ class AppSettings(BaseSettings):
 def get_settings() -> AppSettings:
     """Return one validated settings object for the current process."""
     return AppSettings()
+signing_private_key_path: Path | None = None
+signing_public_key_path: Path | None = None
+signing_private_key_passphrase: SecretStr | None = None  

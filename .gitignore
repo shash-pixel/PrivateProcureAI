@@ -24,3 +24,7 @@ chroma/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local cryptographic key material
+keys/
+*.pem

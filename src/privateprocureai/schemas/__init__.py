@@ -145,4 +145,15 @@ __all__ = [
     "OptimizationDecision",
     "OptimizationIssue",
     "OptimizationIssueCode",
+    "IntegrityRecord",
+    "IntegrityVerification",
+    "SignatureAlgorithm",
+    "SignedFinalRecommendation",
 ]
+
+from privateprocureai.schemas.integrity import (
+    IntegrityRecord,
+    IntegrityVerification,
+    SignatureAlgorithm,
+    SignedFinalRecommendation,
+)
