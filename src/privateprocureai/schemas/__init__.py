@@ -45,6 +45,14 @@ from privateprocureai.schemas.models import (
     TaskPriority,
     UserPreferences,
 )
+from privateprocureai.schemas.optimization import (
+    FinalOptimizationInput,
+    FinalRecommendation,
+    FinalRecommendationStatus,
+    OptimizationDecision,
+    OptimizationIssue,
+    OptimizationIssueCode,
+)
 from privateprocureai.schemas.orchestration import (
     WorkflowEvent,
     WorkflowResult,
@@ -131,4 +139,10 @@ __all__ = [
     "PreferenceMemoryItem",
     "PreferenceSource",
     "UserPreferenceMemory",
+    "FinalOptimizationInput",
+    "FinalRecommendation",
+    "FinalRecommendationStatus",
+    "OptimizationDecision",
+    "OptimizationIssue",
+    "OptimizationIssueCode",
 ]
