@@ -31,8 +31,8 @@ class AppSettings(BaseSettings):
     environment: Environment = "development"
     log_level: LogLevel = "INFO"
 
-    llm_provider: LLMProvider = "mock"
-    llm_model: str = Field(default="mock-planner-v1",min_length=1,max_length=200)
+    llm_provider: LLMProvider = "gemini"
+    llm_model: str = Field(default="gemini-2.5-flash", min_length=1, max_length=200)
     llm_api_key: SecretStr | None = None
 
     request_timeout_seconds: int = Field(default=30, ge=1, le=300)
@@ -40,17 +40,22 @@ class AppSettings(BaseSettings):
     preference_memory_path: Path = Path("data/preference_memory.json")
 
     embedding_model: str = Field(
-    default="gemini-embedding-2",
-    min_length=1,
-    max_length=200,
-)
+        default="gemini-embedding-2",
+        min_length=1,
+        max_length=200,
+    )
 
     chroma_persist_directory: Path = Path("data/chroma")
     chroma_collection_name: str = Field(
-    default="privateprocureai_chunks",
-    min_length=3,
-    max_length=100,
-)
+        default="privateprocureai_chunks",
+        min_length=3,
+        max_length=100,
+    )
+
+    signing_private_key_path: Path | None = None
+    signing_public_key_path: Path | None = None
+    signing_private_key_passphrase: SecretStr | None = None
+    database_url: SecretStr | None = None
 
     @property
     def uses_remote_llm(self) -> bool:
@@ -62,6 +67,3 @@ class AppSettings(BaseSettings):
 def get_settings() -> AppSettings:
     """Return one validated settings object for the current process."""
     return AppSettings()
-signing_private_key_path: Path | None = None
-signing_public_key_path: Path | None = None
-signing_private_key_passphrase: SecretStr | None = None  

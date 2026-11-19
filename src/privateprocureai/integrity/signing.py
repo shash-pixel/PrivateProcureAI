@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import json
 from pathlib import Path
+from uuid import UUID
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
@@ -15,6 +16,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
+from privateprocureai.observability import timed_step
 from privateprocureai.schemas import (
     FinalRecommendation,
     FinalRecommendationStatus,
@@ -28,12 +30,40 @@ class SigningError(RuntimeError):
     """Raised when key loading or signing cannot safely complete."""
 
 
-def canonicalize_recommendation(recommendation: FinalRecommendation) -> bytes:
+def canonicalize_recommendation(
+    recommendation: FinalRecommendation,
+    *,
+    request_id: UUID | None = None,
+    intent_hash_sha256: str | None = None,
+    evidence_ids: list[UUID] | None = None,
+    budget_status: str | None = None,
+    evaluation_status: str | None = None,
+) -> bytes:
     """Create deterministic bytes for hashing and signing."""
-    payload = recommendation.model_dump(mode="json")
+    data: dict[str, object] = {
+        "recommendation": recommendation.model_dump(mode="json"),
+    }
+    if request_id is not None:
+        data["request_id"] = str(request_id)
+    if intent_hash_sha256 is not None:
+        data["intent_hash_sha256"] = intent_hash_sha256
+    if evidence_ids is not None:
+        data["evidence_ids"] = [str(eid) for eid in sorted(evidence_ids)]
+    if budget_status is not None:
+        data["budget_status"] = budget_status
+    if evaluation_status is not None:
+        data["evaluation_status"] = evaluation_status
+
+    if len(data) == 1:
+        return json.dumps(
+            data["recommendation"],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
 
     return json.dumps(
-        payload,
+        data,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
@@ -51,9 +81,7 @@ def generate_ed25519_keypair(
         raise SigningError("Private and public key paths must be different.")
 
     if private_key_path.exists() or public_key_path.exists():
-        raise SigningError(
-            "Refusing to overwrite existing key material. Choose new paths."
-        )
+        raise SigningError("Refusing to overwrite existing key material. Choose new paths.")
 
     private_key_path.parent.mkdir(parents=True, exist_ok=True)
     public_key_path.parent.mkdir(parents=True, exist_ok=True)
@@ -107,9 +135,7 @@ class Ed25519ResultSigner:
                 private_key_path.read_bytes(),
                 password=passphrase,
             )
-            loaded_public_key = serialization.load_pem_public_key(
-                public_key_path.read_bytes()
-            )
+            loaded_public_key = serialization.load_pem_public_key(public_key_path.read_bytes())
         except (OSError, ValueError, TypeError) as error:
             raise SigningError("Could not load signing key files.") from error
 
@@ -121,15 +147,12 @@ class Ed25519ResultSigner:
 
         derived_public_key = loaded_private_key.public_key()
 
-        if (
-            derived_public_key.public_bytes(
-                encoding=serialization.Encoding.Raw,
-                format=serialization.PublicFormat.Raw,
-            )
-            != loaded_public_key.public_bytes(
-                encoding=serialization.Encoding.Raw,
-                format=serialization.PublicFormat.Raw,
-            )
+        if derived_public_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        ) != loaded_public_key.public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
         ):
             raise SigningError("Private and public key files do not match.")
 
@@ -141,69 +164,93 @@ class Ed25519ResultSigner:
     def sign(
         self,
         recommendation: FinalRecommendation,
+        *,
+        request_id: UUID | None = None,
+        intent_hash_sha256: str | None = None,
+        evidence_ids: list[UUID] | None = None,
+        budget_status: str | None = None,
+        evaluation_status: str | None = None,
     ) -> SignedFinalRecommendation:
         """Hash and sign a validated recommendation ready for presentation."""
-        if recommendation.status is not FinalRecommendationStatus.READY:
-            raise SigningError(
-                "Only a ready final recommendation may receive a signature."
+        with timed_step("signing"):
+            if recommendation.status is not FinalRecommendationStatus.READY:
+                raise SigningError("Only a ready final recommendation may receive a signature.")
+
+            payload = canonicalize_recommendation(
+                recommendation,
+                request_id=request_id,
+                intent_hash_sha256=intent_hash_sha256,
+                evidence_ids=evidence_ids,
+                budget_status=budget_status,
+                evaluation_status=evaluation_status,
             )
+            payload_hash = hashlib.sha256(payload).hexdigest()
+            signature = self._private_key.sign(payload)
 
-        payload = canonicalize_recommendation(recommendation)
-        payload_hash = hashlib.sha256(payload).hexdigest()
-        signature = self._private_key.sign(payload)
-
-        return SignedFinalRecommendation(
-            recommendation=recommendation,
-            integrity=IntegrityRecord(
-                payload_sha256=payload_hash,
-                signature_base64=base64.b64encode(signature).decode("ascii"),
-                public_key_fingerprint_sha256=self._public_key_fingerprint(),
-            ),
-        )
+            return SignedFinalRecommendation(
+                recommendation=recommendation,
+                integrity=IntegrityRecord(
+                    payload_sha256=payload_hash,
+                    signature_base64=base64.b64encode(signature).decode("ascii"),
+                    public_key_fingerprint_sha256=self._public_key_fingerprint(),
+                    request_id=request_id,
+                    intent_hash_sha256=intent_hash_sha256,
+                    evidence_ids=evidence_ids or [],
+                    budget_status=budget_status,
+                    evaluation_status=evaluation_status,
+                ),
+            )
 
     def verify(
         self,
         signed_recommendation: SignedFinalRecommendation,
     ) -> IntegrityVerification:
         """Verify payload hash, public-key identity, and Ed25519 signature."""
-        payload = canonicalize_recommendation(
-            signed_recommendation.recommendation
-        )
-        computed_hash = hashlib.sha256(payload).hexdigest()
-
-        if not hmac.compare_digest(
-            computed_hash,
-            signed_recommendation.integrity.payload_sha256,
-        ):
-            return IntegrityVerification(
-                is_valid=False,
-                reason="The recommendation payload hash does not match.",
+        with timed_step("signing"):
+            integ = signed_recommendation.integrity
+            payload = canonicalize_recommendation(
+                signed_recommendation.recommendation,
+                request_id=integ.request_id,
+                intent_hash_sha256=integ.intent_hash_sha256,
+                evidence_ids=integ.evidence_ids or None,
+                budget_status=integ.budget_status,
+                evaluation_status=integ.evaluation_status,
             )
+            computed_hash = hashlib.sha256(payload).hexdigest()
 
-        if not hmac.compare_digest(
-            self._public_key_fingerprint(),
-            signed_recommendation.integrity.public_key_fingerprint_sha256,
-        ):
-            return IntegrityVerification(
-                is_valid=False,
-                reason="The signing public-key fingerprint does not match.",
-            )
+            if not hmac.compare_digest(
+                computed_hash,
+                signed_recommendation.integrity.payload_sha256,
+            ):
+                return IntegrityVerification(
+                    is_valid=False,
+                    reason="The recommendation payload hash does not match.",
+                )
 
-        try:
-            self._public_key.verify(
-                base64.b64decode(
-                    signed_recommendation.integrity.signature_base64,
-                    validate=True,
-                ),
-                payload,
-            )
-        except (InvalidSignature, ValueError):
-            return IntegrityVerification(
-                is_valid=False,
-                reason="The Ed25519 signature is invalid.",
-            )
+            if not hmac.compare_digest(
+                self._public_key_fingerprint(),
+                signed_recommendation.integrity.public_key_fingerprint_sha256,
+            ):
+                return IntegrityVerification(
+                    is_valid=False,
+                    reason="The signing public-key fingerprint does not match.",
+                )
 
-        return IntegrityVerification(is_valid=True)
+            try:
+                self._public_key.verify(
+                    base64.b64decode(
+                        signed_recommendation.integrity.signature_base64,
+                        validate=True,
+                    ),
+                    payload,
+                )
+            except (InvalidSignature, ValueError):
+                return IntegrityVerification(
+                    is_valid=False,
+                    reason="The Ed25519 signature is invalid.",
+                )
+
+            return IntegrityVerification(is_valid=True)
 
     def _public_key_fingerprint(self) -> str:
         """Return a SHA-256 identifier for the public key, not the private key."""

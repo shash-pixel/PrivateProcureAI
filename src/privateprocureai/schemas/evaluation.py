@@ -34,6 +34,10 @@ class EvaluationIssueCode(StrEnum):
     HARD_BUDGET_VIOLATION = "hard_budget_violation"
     BUDGET_UNEVALUABLE = "budget_unevaluable"
     CRITICAL_QUALITY_CONCERN = "critical_quality_concern"
+    REQUIREMENT_MISMATCH = "requirement_mismatch"
+    UNREALISTIC_PROCUREMENT_COST = "unrealistic_procurement_cost"
+    INSUFFICIENT_EVIDENCE = "insufficient_evidence"
+    UNVERIFIED_SUPPLIER = "unverified_supplier"
 
 
 class EvaluationCriterion(DomainModel):
@@ -77,3 +81,6 @@ class EvaluationReport(DomainModel):
     criteria: list[EvaluationCriterion] = Field(default_factory=list)
     issues: list[EvaluationIssue] = Field(default_factory=list)
     requires_replanning: bool
+    failed_requirements: list[str] = Field(default_factory=list)
+    missing_evidence: list[str] = Field(default_factory=list)
+    required_corrections: list[str] = Field(default_factory=list)

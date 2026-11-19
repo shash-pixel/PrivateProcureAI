@@ -50,12 +50,8 @@ class OptimizationDecision(DomainModel):
     @model_validator(mode="after")
     def validate_unique_recommendations(self) -> Self:
         """Prevent accidental duplicate selection of one recommendation."""
-        if len(self.selected_recommendation_ids) != len(
-            set(self.selected_recommendation_ids)
-        ):
-            raise ValueError(
-                "selected_recommendation_ids must not contain duplicates."
-            )
+        if len(self.selected_recommendation_ids) != len(set(self.selected_recommendation_ids)):
+            raise ValueError("selected_recommendation_ids must not contain duplicates.")
 
         return self
 

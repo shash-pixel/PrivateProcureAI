@@ -21,9 +21,7 @@ def create_llm_provider(settings: AppSettings | None = None) -> StructuredLLM:
 
     if active_settings.llm_provider == "gemini":
         if active_settings.llm_api_key is None:
-            raise LLMProviderError(
-                "PP_AI_LLM_API_KEY is required when PP_AI_LLM_PROVIDER=gemini."
-            )
+            raise LLMProviderError("PP_AI_LLM_API_KEY is required when PP_AI_LLM_PROVIDER=gemini.")
 
         return GeminiProvider(
             api_key=active_settings.llm_api_key,
@@ -36,6 +34,4 @@ def create_llm_provider(settings: AppSettings | None = None) -> StructuredLLM:
             "The OpenAI adapter is not implemented. Gemini is the current runtime provider."
         )
 
-    raise ProviderNotImplementedError(
-        f"Unsupported LLM provider: {active_settings.llm_provider}"
-    )
+    raise ProviderNotImplementedError(f"Unsupported LLM provider: {active_settings.llm_provider}")

@@ -49,10 +49,7 @@ class GeminiEmbeddingProvider:
     def _embed(self, texts: list[str]) -> list[list[float]]:
         """Call Gemini and validate the returned vector count."""
         contents = [
-            self._types.Content(
-                parts=[self._types.Part.from_text(text=text)]
-            )
-            for text in texts
+            self._types.Content(parts=[self._types.Part.from_text(text=text)]) for text in texts
         ]
 
         try:
@@ -63,10 +60,7 @@ class GeminiEmbeddingProvider:
         except Exception as error:
             raise EmbeddingProviderError("Gemini embedding request failed.") from error
 
-        vectors = [
-            list(embedding.values)
-            for embedding in response.embeddings
-        ]
+        vectors = [list(embedding.values) for embedding in response.embeddings]
 
         if len(vectors) != len(texts):
             raise EmbeddingProviderError(

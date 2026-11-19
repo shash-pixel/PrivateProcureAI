@@ -76,9 +76,7 @@ class TaskPlanDraft(DomainModel):
                 raise ValueError(f"Task '{task.task_key}' cannot depend on itself.")
 
             if len(task.depends_on) != len(set(task.depends_on)):
-                raise ValueError(
-                    f"Task '{task.task_key}' contains duplicate dependencies."
-                )
+                raise ValueError(f"Task '{task.task_key}' contains duplicate dependencies.")
 
             unknown_dependencies = set(task.depends_on) - task_key_set
             if unknown_dependencies:
@@ -118,9 +116,7 @@ class TaskPlan(DomainModel):
         for task in self.tasks:
             unknown_dependencies = set(task.depends_on) - task_id_set
             if unknown_dependencies:
-                raise ValueError(
-                    f"Task '{task.task_id}' has dependencies outside this plan."
-                )
+                raise ValueError(f"Task '{task.task_id}' has dependencies outside this plan.")
 
             graph[task.task_id] = task.depends_on
 

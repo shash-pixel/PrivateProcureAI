@@ -14,6 +14,7 @@ from privateprocureai.llm.base import (
     StructuredLLM,
 )
 from privateprocureai.llm.exceptions import LLMProviderError, StructuredOutputError
+from privateprocureai.observability import timed_step
 
 
 class MockLLMProvider(StructuredLLM):
@@ -35,17 +36,18 @@ class MockLLMProvider(StructuredLLM):
         """Validate the next queued payload as the requested response model."""
         del request  # The mock is deterministic and does not interpret prompts.
 
-        if not self._responses:
-            raise LLMProviderError(
-                "MockLLMProvider has no queued response. "
-                "Provide a payload when constructing the provider."
-            )
+        with timed_step("llm_call"):
+            if not self._responses:
+                raise LLMProviderError(
+                    "MockLLMProvider has no queued response. "
+                    "Provide a payload when constructing the provider."
+                )
 
-        payload = self._responses.popleft()
+            payload = self._responses.popleft()
 
-        try:
-            return response_model.model_validate(payload)
-        except ValidationError as error:
-            raise StructuredOutputError(
-                f"Mock response did not match {response_model.__name__}."
-            ) from error
+            try:
+                return response_model.model_validate(payload)
+            except ValidationError as error:
+                raise StructuredOutputError(
+                    f"Mock response did not match {response_model.__name__}."
+                ) from error

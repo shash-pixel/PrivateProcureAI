@@ -9,6 +9,7 @@ from langgraph.graph import END, START, StateGraph
 
 from privateprocureai.evaluation import CriticAgent
 from privateprocureai.execution import AgentExecutionError, ParallelAgentExecutor
+from privateprocureai.observability import timed_step
 from privateprocureai.planning import TaskPlanner
 from privateprocureai.schemas import (
     AgentResult,
@@ -69,30 +70,31 @@ class ReplanningCoordinator:
         evidence: Sequence[Evidence] = (),
     ) -> ReplanningOutcome:
         """Run the bounded plan-execute-evaluate loop."""
-        final_state = cast(
-            ReplanningState,
-            self._graph.invoke(
-                {
-                    "intent": intent,
-                    "evidence": list(evidence),
-                    "iteration_number": 0,
-                    "feedback": [],
-                    "history": [],
-                }
-            ),
-        )
+        with timed_step("replanning"):
+            final_state = cast(
+                ReplanningState,
+                self._graph.invoke(
+                    {
+                        "intent": intent,
+                        "evidence": list(evidence),
+                        "iteration_number": 0,
+                        "feedback": [],
+                        "history": [],
+                    }
+                ),
+            )
 
-        history = final_state["history"]
-        latest_evaluation = history[-1].evaluation_report
+            history = final_state["history"]
+            latest_evaluation = history[-1].evaluation_report
 
-        return ReplanningOutcome(
-            status=(
-                ReplanningStatus.COMPLETED
-                if not latest_evaluation.requires_replanning
-                else ReplanningStatus.EXHAUSTED
-            ),
-            iterations=history,
-        )
+            return ReplanningOutcome(
+                status=(
+                    ReplanningStatus.COMPLETED
+                    if not latest_evaluation.requires_replanning
+                    else ReplanningStatus.EXHAUSTED
+                ),
+                iterations=history,
+            )
 
     def _build_graph(self):
         """Build the deterministic LangGraph re-planning loop."""
@@ -157,9 +159,7 @@ class ReplanningCoordinator:
         budget_assessment = None
 
         if self._budget_assessment_builder is not None:
-            budget_assessment = self._budget_assessment_builder(
-                state["current_execution"]
-            )
+            budget_assessment = self._budget_assessment_builder(state["current_execution"])
 
         evaluation = self._critic.evaluate(
             EvaluationInput(

@@ -58,9 +58,7 @@ class JsonPreferenceMemoryRepository:
         try:
             payload = json.loads(self._path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as error:
-            raise ValueError(
-                f"Preference memory file is not valid JSON: {self._path}"
-            ) from error
+            raise ValueError(f"Preference memory file is not valid JSON: {self._path}") from error
 
         if not isinstance(payload, dict):
             raise ValueError("Preference memory root must be a JSON object.")

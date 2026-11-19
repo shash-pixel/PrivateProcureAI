@@ -24,6 +24,8 @@ class BudgetViolation(StrEnum):
 
     BUDGET_EXCEEDED = "budget_exceeded"
     CURRENCY_MISMATCH = "currency_mismatch"
+    UNREALISTIC_COST = "unrealistic_procurement_cost"
+    INCOMPLETE_PRICING = "incomplete_pricing"
 
 
 class CostLineItem(DomainModel):
@@ -32,6 +34,9 @@ class CostLineItem(DomainModel):
     item_id: UUID = Field(default_factory=uuid4)
     label: str = Field(min_length=1, max_length=300)
     cost: Money
+    quantity: int = 1
+    unit_cost: Money | None = None
+    category: str | None = None
     recommendation_id: UUID | None = None
 
 
@@ -62,3 +67,7 @@ class BudgetAssessment(DomainModel):
     line_item_count: int = Field(ge=0)
     violations: list[BudgetViolation] = Field(default_factory=list)
     requires_replanning: bool
+    is_procurement_feasible: bool = True
+    is_scope_complete: bool = True
+    pricing_status: str = "complete"
+    feasibility_notes: list[str] = Field(default_factory=list)

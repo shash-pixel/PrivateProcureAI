@@ -38,11 +38,7 @@ def make_recommendation(*, cost: str | None) -> Recommendation:
     return Recommendation(
         title="Candidate option",
         rationale="This candidate aligns with the supplied requirements.",
-        estimated_cost=(
-            Money(amount=cost, currency="USD")
-            if cost is not None
-            else None
-        ),
+        estimated_cost=(Money(amount=cost, currency="USD") if cost is not None else None),
         confidence_score=0.8,
     )
 
@@ -56,9 +52,7 @@ def test_optimizer_returns_budget_compliant_final_recommendation() -> None:
             responses=[
                 {
                     "summary": "The candidate best satisfies the available evidence.",
-                    "selected_recommendation_ids": [
-                        str(candidate.recommendation_id)
-                    ],
+                    "selected_recommendation_ids": [str(candidate.recommendation_id)],
                 }
             ]
         )
@@ -74,9 +68,7 @@ def test_optimizer_returns_budget_compliant_final_recommendation() -> None:
                     recommendations=[candidate],
                 )
             ],
-            budget=BudgetConstraint(
-                maximum=Money(amount="100.00", currency="USD")
-            ),
+            budget=BudgetConstraint(maximum=Money(amount="100.00", currency="USD")),
         )
     )
 
@@ -94,9 +86,7 @@ def test_optimizer_blocks_selected_candidate_without_cost() -> None:
             responses=[
                 {
                     "summary": "The candidate is relevant.",
-                    "selected_recommendation_ids": [
-                        str(candidate.recommendation_id)
-                    ],
+                    "selected_recommendation_ids": [str(candidate.recommendation_id)],
                 }
             ]
         )
@@ -112,9 +102,7 @@ def test_optimizer_blocks_selected_candidate_without_cost() -> None:
                     recommendations=[candidate],
                 )
             ],
-            budget=BudgetConstraint(
-                maximum=Money(amount="100.00", currency="USD")
-            ),
+            budget=BudgetConstraint(maximum=Money(amount="100.00", currency="USD")),
         )
     )
 

@@ -44,25 +44,25 @@ def test_research_agent_returns_findings_linked_to_supplied_evidence() -> None:
     )
 
     result = ResearchAgent(provider).run(
-    AgentTaskContext(
-        intent=ExtractedIntent(
-            request_id=uuid4(),
-            objective="Determine whether stated requirements are supported.",
-            constraints=[],
-            preferences=[],
-            assumptions=[],
-            clarification_needed=False,
-            clarification_questions=[],
-            confidence_score=0.9,
-        ),
-        task=PlanTask(
-            title="Research available evidence",
-            instructions="Assess evidence against the stated requirements.",
-            kind=TaskKind.RESEARCH,
-        ),
-        evidence=[evidence],
+        AgentTaskContext(
+            intent=ExtractedIntent(
+                request_id=uuid4(),
+                objective="Determine whether stated requirements are supported.",
+                constraints=[],
+                preferences=[],
+                assumptions=[],
+                clarification_needed=False,
+                clarification_questions=[],
+                confidence_score=0.9,
+            ),
+            task=PlanTask(
+                title="Research available evidence",
+                instructions="Assess evidence against the stated requirements.",
+                kind=TaskKind.RESEARCH,
+            ),
+            evidence=[evidence],
+        )
     )
-)
 
     assert result.agent_name == "research_agent"
     assert result.findings[0].evidence_ids == [evidence.evidence_id]
@@ -74,25 +74,25 @@ def test_research_agent_rejects_non_research_task() -> None:
 
     with pytest.raises(InvalidResearchTaskError):
         agent.run(
-        AgentTaskContext(
-            intent=ExtractedIntent(
-                request_id=uuid4(),
-                objective="Evaluate options.",
-                constraints=[],
-                preferences=[],
-                assumptions=[],
-                clarification_needed=False,
-                clarification_questions=[],
-                confidence_score=0.9,
-            ),
-            task=PlanTask(
-                title="Evaluate options",
-                instructions="Compare available options.",
-                kind=TaskKind.EVALUATION,
-            ),
-            evidence=[],
+            AgentTaskContext(
+                intent=ExtractedIntent(
+                    request_id=uuid4(),
+                    objective="Evaluate options.",
+                    constraints=[],
+                    preferences=[],
+                    assumptions=[],
+                    clarification_needed=False,
+                    clarification_questions=[],
+                    confidence_score=0.9,
+                ),
+                task=PlanTask(
+                    title="Evaluate options",
+                    instructions="Compare available options.",
+                    kind=TaskKind.EVALUATION,
+                ),
+                evidence=[],
+            )
         )
-    )
 
 
 def test_research_agent_rejects_unsupported_evidence_reference() -> None:
@@ -123,22 +123,22 @@ def test_research_agent_rejects_unsupported_evidence_reference() -> None:
 
     with pytest.raises(UnsupportedEvidenceReferenceError):
         agent.run(
-        AgentTaskContext(
-            intent=ExtractedIntent(
-                request_id=uuid4(),
-                objective="Analyze evidence.",
-                constraints=[],
-                preferences=[],
-                assumptions=[],
-                clarification_needed=False,
-                clarification_questions=[],
-                confidence_score=0.9,
-            ),
-            task=PlanTask(
-                title="Research evidence",
-                instructions="Analyze supplied evidence.",
-                kind=TaskKind.RESEARCH,
-            ),
-            evidence=[supplied_evidence],
+            AgentTaskContext(
+                intent=ExtractedIntent(
+                    request_id=uuid4(),
+                    objective="Analyze evidence.",
+                    constraints=[],
+                    preferences=[],
+                    assumptions=[],
+                    clarification_needed=False,
+                    clarification_questions=[],
+                    confidence_score=0.9,
+                ),
+                task=PlanTask(
+                    title="Research evidence",
+                    instructions="Analyze supplied evidence.",
+                    kind=TaskKind.RESEARCH,
+                ),
+                evidence=[supplied_evidence],
+            )
         )
-    )

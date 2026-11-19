@@ -50,9 +50,7 @@ def test_extractor_preserves_clarification_questions() -> None:
                 "preferences": [],
                 "assumptions": [],
                 "clarification_needed": True,
-                "clarification_questions": [
-                    "What outcome should the plan optimize for?"
-                ],
+                "clarification_questions": ["What outcome should the plan optimize for?"],
                 "confidence_score": 0.4,
             }
         ]

@@ -26,11 +26,17 @@ class IntentSource(StrEnum):
 
 
 class IntentConstraint(DomainModel):
-    """A generic restriction or preference identified in a user goal."""
+    """A generic or structured restriction or preference identified in a user goal."""
 
     description: str = Field(min_length=3, max_length=1_000)
     strength: ConstraintStrength
     source: IntentSource
+    category: str | None = None
+    target_quantity: int | None = None
+    unit: str | None = None
+    min_threshold: float | None = None
+    max_threshold: float | None = None
+    original_text: str | None = None
 
 
 class IntentDetails(DomainModel):
@@ -40,17 +46,19 @@ class IntentDetails(DomainModel):
     constraints: list[IntentConstraint] = Field(default_factory=list)
     preferences: list[str] = Field(default_factory=list)
     assumptions: list[str] = Field(default_factory=list)
+    requirements: dict[str, object] = Field(default_factory=dict)
+    exclusions: list[str] = Field(default_factory=list)
+    supplier_requirements: list[str] = Field(default_factory=list)
     clarification_needed: bool = False
     clarification_questions: list[str] = Field(default_factory=list)
     confidence_score: float = Field(ge=0.0, le=1.0)
+    confidence_breakdown: dict[str, float] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_clarification_state(self) -> Self:
         """Keep clarification state and questions consistent."""
         if self.clarification_needed and not self.clarification_questions:
-            raise ValueError(
-                "Clarification questions are required when clarification is needed."
-            )
+            raise ValueError("Clarification questions are required when clarification is needed.")
 
         if not self.clarification_needed and self.clarification_questions:
             raise ValueError(

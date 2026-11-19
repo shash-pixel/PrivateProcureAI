@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from privateprocureai.constraints import BudgetEngine
 from privateprocureai.llm import StructuredGenerationRequest, StructuredLLM
+from privateprocureai.observability import timed_step
 from privateprocureai.schemas import (
     BudgetEvaluationInput,
     BudgetStatus,
@@ -50,37 +51,38 @@ class FinalRecommendationOptimizer:
         optimization_input: FinalOptimizationInput,
     ) -> FinalRecommendation:
         """Select candidates through the LLM and validate them in Python."""
-        candidates = self._collect_candidates(optimization_input)
+        with timed_step("optimization"):
+            candidates = self._collect_candidates(optimization_input)
 
-        if not candidates:
-            return FinalRecommendation(
-                status=FinalRecommendationStatus.BLOCKED,
-                summary="No candidate recommendations are available for selection.",
-                selected_recommendations=[],
-                issues=[
-                    OptimizationIssue(
-                        code=OptimizationIssueCode.UNKNOWN_RECOMMENDATION,
-                        message="No agent produced a candidate recommendation.",
-                    )
-                ],
-                requires_replanning=True,
+            if not candidates:
+                return FinalRecommendation(
+                    status=FinalRecommendationStatus.BLOCKED,
+                    summary="No candidate recommendations are available for selection.",
+                    selected_recommendations=[],
+                    issues=[
+                        OptimizationIssue(
+                            code=OptimizationIssueCode.UNKNOWN_RECOMMENDATION,
+                            message="No agent produced a candidate recommendation.",
+                        )
+                    ],
+                    requires_replanning=True,
+                )
+
+            decision = self._select_candidates(
+                optimization_input=optimization_input,
+                candidates=candidates,
             )
 
-        decision = self._select_candidates(
-            optimization_input=optimization_input,
-            candidates=candidates,
-        )
+            selected_recommendations = self._resolve_selected_candidates(
+                decision=decision,
+                candidates=candidates,
+            )
 
-        selected_recommendations = self._resolve_selected_candidates(
-            decision=decision,
-            candidates=candidates,
-        )
-
-        return self._validate_final_selection(
-            summary=decision.summary,
-            selected_recommendations=selected_recommendations,
-            budget=optimization_input.budget,
-        )
+            return self._validate_final_selection(
+                summary=decision.summary,
+                selected_recommendations=selected_recommendations,
+                budget=optimization_input.budget,
+            )
 
     def _select_candidates(
         self,
@@ -127,10 +129,7 @@ class FinalRecommendationOptimizer:
         candidates: list[Recommendation],
     ) -> list[Recommendation]:
         """Map LLM-selected IDs back to application-owned candidate objects."""
-        candidates_by_id = {
-            candidate.recommendation_id: candidate
-            for candidate in candidates
-        }
+        candidates_by_id = {candidate.recommendation_id: candidate for candidate in candidates}
 
         unknown_ids = [
             recommendation_id

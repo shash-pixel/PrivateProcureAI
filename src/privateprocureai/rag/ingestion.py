@@ -58,9 +58,7 @@ class DocumentIngestor:
         try:
             raw_text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError as error:
-            raise DocumentIngestionError(
-                f"Document must use UTF-8 encoding: {path}"
-            ) from error
+            raise DocumentIngestionError(f"Document must use UTF-8 encoding: {path}") from error
 
         return self.ingest_text(
             raw_text,
@@ -83,9 +81,7 @@ class DocumentIngestor:
         cleaned_text = self._clean_text(raw_text)
 
         if not cleaned_text:
-            raise EmptyDocumentError(
-                "Document contains no usable text after cleaning."
-            )
+            raise EmptyDocumentError("Document contains no usable text after cleaning.")
 
         metadata = DocumentMetadata(
             source_name=source_name,

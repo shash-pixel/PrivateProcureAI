@@ -87,11 +87,7 @@ def test_memory_adds_non_conflicting_preferences(tmp_path) -> None:
 
     enriched_request = service.enrich_request(
         profile_id=profile_id,
-        planning_request=PlanningRequest(
-            goal="Prepare a supported plan for the stated objective."
-        ),
+        planning_request=PlanningRequest(goal="Prepare a supported plan for the stated objective."),
     )
 
-    assert enriched_request.preferences.nice_to_have == [
-        "Clear evidence trail"
-    ]
+    assert enriched_request.preferences.nice_to_have == ["Clear evidence trail"]

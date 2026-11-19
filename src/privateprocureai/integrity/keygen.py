@@ -11,9 +11,7 @@ from privateprocureai.integrity.signing import generate_ed25519_keypair
 
 def main() -> None:
     """Generate key files without exposing a passphrase in command history."""
-    parser = argparse.ArgumentParser(
-        description="Generate an Ed25519 signing key pair."
-    )
+    parser = argparse.ArgumentParser(description="Generate an Ed25519 signing key pair.")
     parser.add_argument("--private-key", required=True, type=Path)
     parser.add_argument("--public-key", required=True, type=Path)
     parser.add_argument(

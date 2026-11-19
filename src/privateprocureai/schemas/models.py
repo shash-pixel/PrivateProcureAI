@@ -27,6 +27,7 @@ class TaskKind(StrEnum):
     RECOMMENDATION = "recommendation"
     BUDGET_ANALYSIS = "budget_analysis"
     EVALUATION = "evaluation"
+    SUPPLIER_EVALUATION = "supplier_evaluation"
 
 
 class TaskPriority(StrEnum):
@@ -102,6 +103,15 @@ class PlanTask(DomainModel):
         return self
 
 
+class EvidenceClassification(StrEnum):
+    """Explicit classification of evidence reliability."""
+
+    VERIFIED = "verified"
+    UNVERIFIED = "unverified"
+    ESTIMATED = "estimated"
+    MISSING = "missing"
+
+
 class Evidence(DomainModel):
     """A retrieved or externally supplied fact supporting a recommendation."""
 
@@ -110,6 +120,11 @@ class Evidence(DomainModel):
     source_url: str | None = Field(default=None, max_length=2_000)
     excerpt: str = Field(min_length=1, max_length=5_000)
     relevance_score: float = Field(ge=0.0, le=1.0)
+    classification: EvidenceClassification = EvidenceClassification.UNVERIFIED
+    provenance: str = Field(default="corpus", min_length=1, max_length=200)
+    associated_requirement: str | None = Field(default=None, max_length=200)
+    supporting_claim: str | None = Field(default=None, max_length=1_000)
+    document_id: str | None = Field(default=None, max_length=200)
     retrieved_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -122,6 +137,8 @@ class Recommendation(DomainModel):
     estimated_cost: Money | None = None
     evidence_ids: list[UUID] = Field(default_factory=list)
     confidence_score: float = Field(ge=0.0, le=1.0)
+    confidence_breakdown: dict[str, float] = Field(default_factory=dict)
+
 
 class Finding(DomainModel):
     """A source-linked statement produced by an agent."""
@@ -133,7 +150,7 @@ class Finding(DomainModel):
 
 
 class AgentResult(DomainModel):
-    """The structured output contract used by each future specialized agent."""
+    """The structured output contract used by each specialized agent."""
 
     agent_name: str = Field(min_length=1, max_length=100)
     status: AgentStatus
@@ -142,8 +159,13 @@ class AgentResult(DomainModel):
     evidence: list[Evidence] = Field(default_factory=list)
     error_message: str | None = Field(default=None, max_length=1_000)
     findings: list[Finding] = Field(default_factory=list)
-    task_id: UUID | None=None 
-    # the above line connects each agent result to the task that produced it .
+    task_id: UUID | None = None
+    input_requirements: list[str] = Field(default_factory=list)
+    tasks_performed: list[str] = Field(default_factory=list)
+    decisions_made: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    unresolved_issues: list[str] = Field(default_factory=list)
+    duration_ms: float | None = None
 
     @model_validator(mode="after")
     def validate_failure_details(self) -> Self:

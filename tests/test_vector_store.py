@@ -9,10 +9,7 @@ class FakeEmbeddingProvider:
     """Deterministic embeddings for tests without Gemini API calls."""
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        return [
-            [float(len(text)), float(index + 1)]
-            for index, text in enumerate(texts)
-        ]
+        return [[float(len(text)), float(index + 1)] for index, text in enumerate(texts)]
 
     def embed_query(self, text: str) -> list[float]:
         return [float(len(text)), 1.0]
@@ -33,9 +30,7 @@ def test_indexer_stores_chunks_and_vector_store_returns_matches() -> None:
         embedding_model="test-embedding-model",
     )
 
-    indexed_count = RagIndexer(FakeEmbeddingProvider(), store).index(
-        ingestion_result
-    )
+    indexed_count = RagIndexer(FakeEmbeddingProvider(), store).index(ingestion_result)
 
     matches = store.search(
         FakeEmbeddingProvider().embed_query("generic retrieval"),

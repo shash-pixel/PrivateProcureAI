@@ -7,7 +7,7 @@ from privateprocureai.config.settings import AppSettings
 
 
 def test_settings_use_safe_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The project can run locally with a mock provider and no API key."""
+    """Gemini is the primary provider, with no key stored in defaults."""
     for variable_name in (
         "PP_AI_ENVIRONMENT",
         "PP_AI_LOG_LEVEL",
@@ -21,8 +21,8 @@ def test_settings_use_safe_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     settings = AppSettings(_env_file=None)
 
     assert settings.environment == "development"
-    assert settings.llm_provider == "mock"
-    assert settings.uses_remote_llm is False
+    assert settings.llm_provider == "gemini"
+    assert settings.uses_remote_llm is True
     assert settings.llm_api_key is None
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from privateprocureai.observability import timed_step
 from privateprocureai.rag.embeddings import EmbeddingProvider
 from privateprocureai.rag.vector_store import VectorStore
 from privateprocureai.schemas import (
@@ -13,6 +14,10 @@ from privateprocureai.schemas import (
     RetrievalConfig,
     RetrievalResult,
 )
+
+
+class RetrievalError(RuntimeError):
+    """Raised when evidence retrieval cannot safely complete."""
 
 
 class EvidenceRetriever(Protocol):
@@ -40,37 +45,42 @@ class RagRetriever:
         if not query.strip():
             raise ValueError("A retrieval query cannot be empty.")
 
-        query_embedding = self._embedding_provider.embed_query(query)
-
-        matches = self._vector_store.search(
-            query_embedding,
-            limit=self._config.candidate_limit,
-        )
-
-        evidence: list[Evidence] = []
-        discarded_match_count = 0
-
-        for match in matches:
-            relevance_score = self._distance_to_relevance(match.distance)
-
-            if relevance_score < self._config.minimum_relevance_score:
-                discarded_match_count += 1
-                continue
-
-            evidence.append(
-                Evidence(
-                    source_id=str(match.chunk_id),
-                    source_url=match.source_uri,
-                    excerpt=match.text,
-                    relevance_score=relevance_score,
+        with timed_step("retrieval"):
+            try:
+                query_embedding = self._embedding_provider.embed_query(query)
+                matches = self._vector_store.search(
+                    query_embedding,
+                    limit=self._config.candidate_limit,
                 )
-            )
+            except ValueError:
+                raise
+            except Exception as error:
+                raise RetrievalError(f"Evidence retrieval failed: {error}") from error
 
-        return RetrievalResult(
-            query=query,
-            evidence=evidence,
-            discarded_match_count=discarded_match_count,
-        )
+            evidence: list[Evidence] = []
+            discarded_match_count = 0
+
+            for match in matches:
+                relevance_score = self._distance_to_relevance(match.distance)
+
+                if relevance_score < self._config.minimum_relevance_score:
+                    discarded_match_count += 1
+                    continue
+
+                evidence.append(
+                    Evidence(
+                        source_id=str(match.chunk_id),
+                        source_url=match.source_uri,
+                        excerpt=match.text,
+                        relevance_score=relevance_score,
+                    )
+                )
+
+            return RetrievalResult(
+                query=query,
+                evidence=evidence,
+                discarded_match_count=discarded_match_count,
+            )
 
     @staticmethod
     def _distance_to_relevance(distance: float) -> float:
@@ -83,15 +93,15 @@ def build_retrieval_query(
     task: PlanTask,
 ) -> str:
     """Create a generic retrieval query from validated planning state."""
-    constraints = "\n".join(
-        f"- {constraint.description}"
-        for constraint in intent.constraints
-    ) or "- No explicit constraints provided."
+    constraints = (
+        "\n".join(f"- {constraint.description}" for constraint in intent.constraints)
+        or "- No explicit constraints provided."
+    )
 
-    preferences = "\n".join(
-        f"- {preference}"
-        for preference in intent.preferences
-    ) or "- No explicit preferences provided."
+    preferences = (
+        "\n".join(f"- {preference}" for preference in intent.preferences)
+        or "- No explicit preferences provided."
+    )
 
     return (
         f"Objective:\n{intent.objective}\n\n"

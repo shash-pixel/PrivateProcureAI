@@ -13,16 +13,22 @@ authors = [
     { name = "PrivateProcureAI contributors" },
 ]
 dependencies = [
-    "chromadb>=1.0", 
+    "chromadb>=1.0",
     "cryptography>=45.0",
+    "fastapi>=0.115",
     "google-genai>=1.0",
     "langgraph>=1.0",
+    "psycopg[binary]>=3.2",
     "pydantic>=2.10,<3.0",
     "pydantic-settings>=2.7,<3.0",
+    "sqlalchemy>=2.0",
+    "streamlit>=1.57",
+    "uvicorn[standard]>=0.30",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "httpx>=0.28",
     "pytest>=8.0",
     "ruff>=0.8",
 ]

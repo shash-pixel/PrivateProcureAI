@@ -44,13 +44,11 @@ def test_workflow_extracts_intent_and_creates_plan() -> None:
         ]
     )
 
-    request = PlanningRequest(
-        goal="Provide a recommendation that meets the supplied requirements."
-    )
+    request = PlanningRequest(goal="Provide a recommendation that meets the supplied requirements.")
 
     result = PlanningWorkflow(provider).run(request)
-# Checks whether the workflow behaved as expected
-    assert result.status is WorkflowStatus.PLANNED   
+    # Checks whether the workflow behaved as expected
+    assert result.status is WorkflowStatus.PLANNED
     assert result.task_plan is not None
     assert len(result.task_plan.tasks) == 2
     assert [event.step for event in result.events] == [
@@ -69,9 +67,7 @@ def test_workflow_stops_when_clarification_is_needed() -> None:
                 "preferences": [],
                 "assumptions": [],
                 "clarification_needed": True,
-                "clarification_questions": [
-                    "What outcome should the plan optimize for?"
-                ],
+                "clarification_questions": ["What outcome should the plan optimize for?"],
                 "confidence_score": 0.4,
             }
         ]
@@ -80,7 +76,7 @@ def test_workflow_stops_when_clarification_is_needed() -> None:
     request = PlanningRequest(goal="Create a plan.")
     result = PlanningWorkflow(provider).run(request)
 
-# Confirms that the workflow stopped correctly.
-    assert result.status is WorkflowStatus.NEEDS_CLARIFICATION   
+    # Confirms that the workflow stopped correctly.
+    assert result.status is WorkflowStatus.NEEDS_CLARIFICATION
     assert result.task_plan is None
     assert [event.step for event in result.events] == ["intent_extraction"]

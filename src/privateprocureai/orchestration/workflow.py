@@ -1,6 +1,6 @@
 """LangGraph orchestration for intent extraction and task planning."""
 
-#It connects Intent Extraction module (Module 4) and Task Planning module (Module 5) using LangGraph
+# Connects Intent Extraction (Module 4) and Task Planning (Module 5) via LangGraph.
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from langgraph.graph import END, START, StateGraph
 
 from privateprocureai.intent import IntentExtractor
 from privateprocureai.llm import StructuredLLM
+from privateprocureai.observability import RequestContext, timed_step
 from privateprocureai.orchestration.state import PlanningWorkflowState
 from privateprocureai.planning import TaskPlanner
 from privateprocureai.schemas import (
@@ -31,31 +32,32 @@ class PlanningWorkflow:
 
     def run(self, planning_request: PlanningRequest) -> WorkflowResult:
         """Run intent extraction and, when possible, task planning."""
-        final_state = cast(
-            PlanningWorkflowState,
-            self._graph.invoke(
-                {
-                    "planning_request": planning_request,
-                    "execution_log": [],
-                }
-            ),
-        )
+        with RequestContext(request_id=planning_request.request_id):
+            final_state = cast(
+                PlanningWorkflowState,
+                self._graph.invoke(
+                    {
+                        "planning_request": planning_request,
+                        "execution_log": [],
+                    }
+                ),
+            )
 
-        intent = final_state["extracted_intent"]
-        task_plan = final_state.get("task_plan")
-        status = (
-            WorkflowStatus.NEEDS_CLARIFICATION
-            if intent.clarification_needed
-            else WorkflowStatus.PLANNED
-        )
+            intent = final_state["extracted_intent"]
+            task_plan = final_state.get("task_plan")
+            status = (
+                WorkflowStatus.NEEDS_CLARIFICATION
+                if intent.clarification_needed
+                else WorkflowStatus.PLANNED
+            )
 
-        return WorkflowResult(
-            request_id=planning_request.request_id,
-            status=status,
-            intent=intent,
-            task_plan=task_plan,
-            events=final_state.get("execution_log", []),
-        )
+            return WorkflowResult(
+                request_id=planning_request.request_id,
+                status=status,
+                intent=intent,
+                task_plan=task_plan,
+                events=final_state.get("execution_log", []),
+            )
 
     def _build_graph(self):
         """Build the deterministic Module 6 workflow graph."""
@@ -82,7 +84,8 @@ class PlanningWorkflow:
         state: PlanningWorkflowState,
     ) -> dict[str, object]:
         """Run Module 4 intent extraction and record its completion."""
-        intent = self._intent_extractor.extract(state["planning_request"])
+        with timed_step("intent_extraction") as timing:
+            intent = self._intent_extractor.extract(state["planning_request"])
 
         return {
             "extracted_intent": intent,
@@ -90,12 +93,14 @@ class PlanningWorkflow:
                 WorkflowEvent(
                     step=WorkflowStep.INTENT_EXTRACTION,
                     message="Extracted structured intent from the planning request.",
+                    duration_ms=timing.duration_ms,
+                    status="success",
                 )
             ],
         }
 
     @staticmethod
-    def _route_after_intent(   
+    def _route_after_intent(
         ##This method decides what happens immediately after intent extraction.
         state: PlanningWorkflowState,
     ) -> Literal["create_plan", "end"]:
@@ -110,7 +115,8 @@ class PlanningWorkflow:
         state: PlanningWorkflowState,
     ) -> dict[str, object]:
         """Run Module 5 planning after intent has been validated."""
-        task_plan = self._task_planner.create_plan(state["extracted_intent"])
+        with timed_step("task_planning") as timing:
+            task_plan = self._task_planner.create_plan(state["extracted_intent"])
 
         return {
             "task_plan": task_plan,
@@ -118,6 +124,8 @@ class PlanningWorkflow:
                 WorkflowEvent(
                     step=WorkflowStep.TASK_PLANNING,
                     message="Created a validated dependency-aware task plan.",
+                    duration_ms=timing.duration_ms,
+                    status="success",
                 )
             ],
         }

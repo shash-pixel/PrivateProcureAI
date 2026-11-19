@@ -29,14 +29,9 @@ class PreferenceMemoryService:
         preferences: UserPreferences,
     ) -> UserPreferenceMemory:
         """Save current explicit preferences, replacing older conflicting entries."""
-        existing = self._repository.get(profile_id) or UserPreferenceMemory(
-            profile_id=profile_id
-        )
+        existing = self._repository.get(profile_id) or UserPreferenceMemory(profile_id=profile_id)
 
-        items_by_value = {
-            item.normalized_value: item
-            for item in existing.preferences
-        }
+        items_by_value = {item.normalized_value: item for item in existing.preferences}
 
         for value, kind in self._iter_preferences(preferences):
             item = PreferenceMemoryItem(
@@ -75,9 +70,7 @@ class PreferenceMemoryService:
             remembered=memory,
         )
 
-        return planning_request.model_copy(
-            update={"preferences": effective_preferences}
-        )
+        return planning_request.model_copy(update={"preferences": effective_preferences})
 
     @staticmethod
     def _merge_preferences(

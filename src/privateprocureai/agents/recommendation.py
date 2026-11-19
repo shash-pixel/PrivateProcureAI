@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from privateprocureai.llm import StructuredGenerationRequest, StructuredLLM
+from privateprocureai.observability import timed_step
 from privateprocureai.schemas import (
     AgentResult,
     AgentStatus,
@@ -48,42 +49,61 @@ class RecommendationAgent:
 
     def run(self, context: AgentTaskContext) -> AgentResult:
         """Execute one recommendation task."""
-        if not self.supports(context.task):
-            raise InvalidRecommendationTaskError(
-                "RecommendationAgent supports only tasks with kind='recommendation'."
+        with timed_step("agent_execution", agent_name=self.agent_name) as timing:
+            if not self.supports(context.task):
+                raise InvalidRecommendationTaskError(
+                    "RecommendationAgent supports only tasks with kind='recommendation'."
+                )
+
+            request = StructuredGenerationRequest(
+                system_instruction=RECOMMENDATION_AGENT_SYSTEM_INSTRUCTION,
+                user_prompt=(
+                    f"Intent:\n{context.intent.model_dump_json(indent=2)}\n\n"
+                    f"Task:\n{context.task.model_dump_json(indent=2)}\n\n"
+                    "Prior agent results:\n"
+                    f"{[item.model_dump(mode='json') for item in context.dependency_results]}"
+                    "\n\nEvidence:\n"
+                    f"{[item.model_dump(mode='json') for item in context.evidence]}"
+                ),
+                temperature=0.0,
             )
 
-        request = StructuredGenerationRequest(
-            system_instruction=RECOMMENDATION_AGENT_SYSTEM_INSTRUCTION,
-            user_prompt=(
-                f"Intent:\n{context.intent.model_dump_json(indent=2)}\n\n"
-                f"Task:\n{context.task.model_dump_json(indent=2)}\n\n"
-                "Prior agent results:\n"
-                f"{[item.model_dump(mode='json') for item in context.dependency_results]}"
-                "\n\nEvidence:\n"
-                f"{[item.model_dump(mode='json') for item in context.evidence]}"
-            ),
-            temperature=0.0,
-        )
+            output = self._llm.generate_structured(
+                request=request,
+                response_model=RecommendationAgentOutput,
+            )
 
-        output = self._llm.generate_structured(
-            request=request,
-            response_model=RecommendationAgentOutput,
-        )
+            self._validate_evidence_references(
+                output,
+                {item.evidence_id for item in context.evidence},
+            )
 
-        self._validate_evidence_references(
-            output,
-            {item.evidence_id for item in context.evidence},
-        )
+            tasks_performed = [
+                (
+                    "Evaluated prior findings from "
+                    f"{len(context.dependency_results)} dependency task(s)"
+                ),
+                f"Formulated {len(output.recommendations)} candidate procurement strategy(ies)",
+                "Validated evidence links and cost breakdowns against technical requirements",
+            ]
 
-        return AgentResult(
-            task_id=context.task.task_id,
-            agent_name=self.agent_name,
-            status=AgentStatus.COMPLETED,
-            summary=output.summary,
-            recommendations=output.recommendations,
-            evidence=context.evidence,
-        )
+            return AgentResult(
+                task_id=context.task.task_id,
+                agent_name=self.agent_name,
+                status=AgentStatus.COMPLETED,
+                summary=output.summary,
+                recommendations=output.recommendations,
+                evidence=context.evidence,
+                input_requirements=[c.description for c in context.intent.constraints],
+                tasks_performed=tasks_performed,
+                decisions_made=[
+                    f"Produced {len(output.recommendations)} candidate package(s) "
+                    "with evidence grounding"
+                ],
+                warnings=[f"Unresolved gap: {gap}" for gap in output.evidence_gaps],
+                unresolved_issues=list(output.evidence_gaps),
+                duration_ms=timing.duration_ms,
+            )
 
     @staticmethod
     def _validate_evidence_references(

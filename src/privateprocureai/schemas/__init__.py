@@ -36,6 +36,7 @@ from privateprocureai.schemas.models import (
     AgentStatus,
     BudgetConstraint,
     Evidence,
+    EvidenceClassification,
     Finding,
     Money,
     PlanningRequest,
@@ -54,6 +55,8 @@ from privateprocureai.schemas.optimization import (
     OptimizationIssueCode,
 )
 from privateprocureai.schemas.orchestration import (
+    ApplicationWorkflowResult,
+    ApplicationWorkflowStatus,
     WorkflowEvent,
     WorkflowResult,
     WorkflowStatus,
@@ -87,6 +90,7 @@ __all__ = [
     "BudgetConstraint",
     "ConstraintStrength",
     "Evidence",
+    "EvidenceClassification",
     "ExtractedIntent",
     "IntentConstraint",
     "IntentDetails",
@@ -105,6 +109,8 @@ __all__ = [
     "WorkflowResult",
     "WorkflowStatus",
     "WorkflowStep",
+    "ApplicationWorkflowResult",
+    "ApplicationWorkflowStatus",
     "Finding",
     "ResearchAgentOutput",
     "AgentTaskContext",

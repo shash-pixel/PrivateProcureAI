@@ -29,12 +29,12 @@ class ParallelAgentExecutor:
     """Run independent plan tasks concurrently while respecting dependencies."""
 
     def __init__(
-    self,
-    agents: Sequence[TaskAgent],
-    *,
-    retriever: EvidenceRetriever | None = None,
-    max_workers: int = 4,
-) -> None:
+        self,
+        agents: Sequence[TaskAgent],
+        *,
+        retriever: EvidenceRetriever | None = None,
+        max_workers: int = 4,
+    ) -> None:
         if not agents:
             raise ValueError("At least one task agent is required.")
 
@@ -78,8 +78,7 @@ class ParallelAgentExecutor:
                         task=task,
                         evidence=list(evidence),
                         dependency_results=[
-                            completed_results[dependency_id]
-                            for dependency_id in task.depends_on
+                            completed_results[dependency_id] for dependency_id in task.depends_on
                         ],
                     ): task.task_id
                     for task in ready_tasks
@@ -97,10 +96,7 @@ class ParallelAgentExecutor:
                     completed_results[task_id] = result
                     del pending_tasks[task_id]
 
-        ordered_results = [
-            completed_results[task.task_id]
-            for task in task_plan.tasks
-        ]
+        ordered_results = [completed_results[task.task_id] for task in task_plan.tasks]
 
         return PlanExecutionResult(
             plan_id=task_plan.plan_id,
@@ -122,15 +118,18 @@ class ParallelAgentExecutor:
         )
 
         if agent is None:
-            raise AgentExecutionError(
-                f"No registered agent supports task kind '{task.kind}'."
-            )
+            raise AgentExecutionError(f"No registered agent supports task kind '{task.kind}'.")
+
+        # Feed evidence into subsequent stages from prior dependency results
+        accumulated_evidence = list(evidence)
+        for dep in dependency_results:
+            accumulated_evidence.extend(dep.evidence)
+
         task_evidence = self._collect_evidence(
             intent=intent,
             task=task,
-            supplied_evidence=evidence,
+            supplied_evidence=accumulated_evidence,
         )
-
 
         context = AgentTaskContext(
             intent=intent,
@@ -139,7 +138,15 @@ class ParallelAgentExecutor:
             dependency_results=dependency_results,
         )
 
-        return agent.run(context)
+        try:
+            return agent.run(context)
+        except Exception as error:
+            return AgentResult(
+                task_id=task.task_id,
+                agent_name=agent.agent_name,
+                status=AgentStatus.FAILED,
+                error_message=str(error),
+            )
 
     def _collect_evidence(
         self,
@@ -147,7 +154,7 @@ class ParallelAgentExecutor:
         intent: ExtractedIntent,
         task,
         supplied_evidence: list[Evidence],
-) ->    list[Evidence]:
+    ) -> list[Evidence]:
         """Combine caller-supplied and retrieved evidence without duplicates."""
         combined_evidence = list(supplied_evidence)
 
@@ -166,4 +173,4 @@ class ParallelAgentExecutor:
         for item in combined_evidence:
             unique_evidence.setdefault(item.source_id, item)
 
-        return list(unique_evidence.values())    
+        return list(unique_evidence.values())

@@ -21,9 +21,7 @@ class RagIndexer:
     def index(self, ingestion_result: IngestionResult) -> int:
         """Embed and store every chunk in one ingestion result."""
         chunks = ingestion_result.chunks
-        embeddings = self._embedding_provider.embed_documents(
-            [chunk.text for chunk in chunks]
-        )
+        embeddings = self._embedding_provider.embed_documents([chunk.text for chunk in chunks])
 
         self._vector_store.upsert(chunks, embeddings)
 

@@ -10,6 +10,7 @@ from privateprocureai.llm.base import (
     StructuredLLM,
 )
 from privateprocureai.llm.exceptions import LLMProviderError, StructuredOutputError
+from privateprocureai.observability import redact_secrets, timed_step
 
 
 class GeminiProvider(StructuredLLM):
@@ -45,23 +46,27 @@ class GeminiProvider(StructuredLLM):
         if request.temperature is not None:
             config_options["temperature"] = request.temperature
 
-        try:
-            response = self._client.models.generate_content(
-                model=self._model,
-                contents=request.user_prompt,
-                config=self._types.GenerateContentConfig(**config_options),
-            )
-        except Exception as error:
-            raise LLMProviderError("Gemini structured generation request failed.") from error
+        with timed_step("llm_call"):
+            try:
+                response = self._client.models.generate_content(
+                    model=self._model,
+                    contents=request.user_prompt,
+                    config=self._types.GenerateContentConfig(**config_options),
+                )
+            except Exception as error:
+                safe_error = redact_secrets(str(error))
+                raise LLMProviderError(
+                    f"Gemini structured generation request failed: {safe_error}"
+                ) from error
 
-        if not response.text:
-            raise StructuredOutputError(
-                "Gemini returned no text for the requested structured response."
-            )
+            if not response.text:
+                raise StructuredOutputError(
+                    "Gemini returned no text for the requested structured response."
+                )
 
-        try:
-            return response_model.model_validate_json(response.text)
-        except Exception as error:
-            raise StructuredOutputError(
-                f"Gemini output did not match {response_model.__name__}."
-            ) from error
+            try:
+                return response_model.model_validate_json(response.text)
+            except Exception as error:
+                raise StructuredOutputError(
+                    f"Gemini output did not match {response_model.__name__}."
+                ) from error

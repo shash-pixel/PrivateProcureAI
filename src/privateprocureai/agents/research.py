@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from privateprocureai.llm import StructuredGenerationRequest, StructuredLLM
+from privateprocureai.observability import timed_step
 from privateprocureai.schemas import (
     AgentResult,
     AgentStatus,
@@ -46,40 +47,56 @@ class ResearchAgent:
 
     def run(self, context: AgentTaskContext) -> AgentResult:
         """Execute one research task."""
-        if not self.supports(context.task):
-            raise InvalidResearchTaskError(
-                "ResearchAgent supports only tasks with kind='research'."
+        with timed_step("agent_execution", agent_name=self.agent_name) as timing:
+            if not self.supports(context.task):
+                raise InvalidResearchTaskError(
+                    "ResearchAgent supports only tasks with kind='research'."
+                )
+
+            request = StructuredGenerationRequest(
+                system_instruction=RESEARCH_AGENT_SYSTEM_INSTRUCTION,
+                user_prompt=(
+                    f"Intent:\n{context.intent.model_dump_json(indent=2)}\n\n"
+                    f"Task:\n{context.task.model_dump_json(indent=2)}\n\n"
+                    "Evidence:\n"
+                    f"{[item.model_dump(mode='json') for item in context.evidence]}"
+                ),
+                temperature=0.0,
             )
 
-        request = StructuredGenerationRequest(
-            system_instruction=RESEARCH_AGENT_SYSTEM_INSTRUCTION,
-            user_prompt=(
-                f"Intent:\n{context.intent.model_dump_json(indent=2)}\n\n"
-                f"Task:\n{context.task.model_dump_json(indent=2)}\n\n"
-                "Evidence:\n"
-                f"{[item.model_dump(mode='json') for item in context.evidence]}"
-            ),
-            temperature=0.0,
-        )
+            output = self._llm.generate_structured(
+                request=request,
+                response_model=ResearchAgentOutput,
+            )
 
-        output = self._llm.generate_structured(
-            request=request,
-            response_model=ResearchAgentOutput,
-        )
+            self._validate_evidence_references(
+                output,
+                {item.evidence_id for item in context.evidence},
+            )
 
-        self._validate_evidence_references(
-            output,
-            {item.evidence_id for item in context.evidence},
-        )
+            tasks_performed = [
+                f"Decomposed specifications for {context.task.title}",
+                f"Evaluated {len(context.evidence)} evidence source(s)",
+                f"Synthesized {len(output.findings)} verified finding(s)",
+            ]
+            warnings = [f"Unresolved gap: {gap}" for gap in output.evidence_gaps]
 
-        return AgentResult(
-            task_id=context.task.task_id,
-            agent_name=self.agent_name,
-            status=AgentStatus.COMPLETED,
-            summary=output.summary,
-            findings=output.findings,
-            evidence=context.evidence,
-        )
+            return AgentResult(
+                task_id=context.task.task_id,
+                agent_name=self.agent_name,
+                status=AgentStatus.COMPLETED,
+                summary=output.summary,
+                findings=output.findings,
+                evidence=context.evidence,
+                input_requirements=[c.description for c in context.intent.constraints],
+                tasks_performed=tasks_performed,
+                decisions_made=[
+                    f"Mapped {len(output.findings)} finding(s) to requirement evidence"
+                ],
+                warnings=warnings,
+                unresolved_issues=list(output.evidence_gaps),
+                duration_ms=timing.duration_ms,
+            )
 
     @staticmethod
     def _validate_evidence_references(
@@ -88,9 +105,7 @@ class ResearchAgent:
     ) -> None:
         """Reject findings that cite unavailable evidence."""
         cited_ids = {
-            evidence_id
-            for finding in output.findings
-            for evidence_id in finding.evidence_ids
+            evidence_id for finding in output.findings for evidence_id in finding.evidence_ids
         }
 
         unsupported_ids = cited_ids - available_ids

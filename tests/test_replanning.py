@@ -120,9 +120,7 @@ def test_replanning_uses_critic_feedback_for_second_attempt() -> None:
     assert outcome.status.value == "completed"
     assert len(outcome.iterations) == 2
     assert planner.feedback_history[0] == []
-    assert planner.feedback_history[1] == [
-        "Add evidence for the unresolved requirement."
-    ]
+    assert planner.feedback_history[1] == ["Add evidence for the unresolved requirement."]
 
 
 def test_replanning_stops_when_maximum_attempts_are_exhausted() -> None:

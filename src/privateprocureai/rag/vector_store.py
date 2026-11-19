@@ -75,9 +75,7 @@ class ChromaVectorStore:
     ) -> None:
         """Insert or update chunks with explicit Gemini-generated embeddings."""
         if len(chunks) != len(embeddings):
-            raise VectorStoreError(
-                "The number of chunks must equal the number of embeddings."
-            )
+            raise VectorStoreError("The number of chunks must equal the number of embeddings.")
 
         if not chunks:
             return
